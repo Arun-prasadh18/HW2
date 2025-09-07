@@ -1,6 +1,8 @@
 import streamlit as st
 import PyPDF2
+import google.generativeai as genai
 from openai import OpenAI
+import cohere
 # pg=st.navigation([first_page,second_page])
 st.set_page_config(page_title="Data Manager",page_icon=":material/edit:")
 # with st.sidebar:
@@ -49,6 +51,7 @@ with st.sidebar:
     )
 
     use_advanced_model = st.checkbox("Use Advanced Model", value=False)
+    use_other_provider = st.checkbox("Use Other Provider", value=False)
 
     if use_advanced_model:
         model = st.radio(
@@ -60,21 +63,36 @@ with st.sidebar:
             "Choose a model",
             ("gpt-5-mini", "gpt-5-nano")
         )
+    # if use_other_provider:
+    #     model=st.radio("Choose Gemini/Cohere API",("gemini-2.0-flash-exp"))
+    if use_other_provider:
+        provider_choice = st.radio("Choose Provider", ("Gemini", "Cohere"))
+        if provider_choice == "Gemini":
+            model = st.radio("Choose Gemini Model", ("gemini-2.0-flash-exp",))
+        else:
+            model = st.radio("Choose Cohere Model", ("command", "command-light", "command-nightly"))
+cohere_api_key = st.secrets["Cohere_API_Key"]
 
 openai_api_key  = st.secrets["API_KEY"]
-
-def read_pdf(file):
-    pdf_reader = PyPDF2.PdfReader(file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text() or ""
-    return text
+Gemini_api_key=st.secrets["Gemini_API_Key"]
+# def read_pdf(file):
+#     pdf_reader = PyPDF2.PdfReader(file)
+#     text = ""
+#     for page in pdf_reader.pages:
+#         text += page.extract_text() or ""
+#     return text
 if not openai_api_key:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
 else:
 
     # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
+    # client = OpenAI(api_key=openai_api_key)
+    if openai_api_key:
+        openai_client = OpenAI(api_key=openai_api_key)
+    if Gemini_api_key:
+        genai.configure(api_key=Gemini_api_key)
+    if cohere_api_key:
+        cohere_client = cohere.Client(api_key=cohere_api_key)
 
     # Let the user upload a file via `st.file_uploader`.
     # uploaded_file = st.file_uploader(
@@ -95,7 +113,7 @@ else:
     #         st.error("Unsupported file type.")
         # Process the uploaded file and question.
         # document = uploaded_file.read().decode()
-        
+  
     if document and model:
         messages = [
             {
@@ -103,10 +121,88 @@ else:
                 "content": f"Here's a document: {document} \n\n---\n\n {question} \n\nPlease provide the summary in {output_language}.",
             }
         ]
-    
-        stream = client.chat.completions.create(
-                    model=model,
-                    messages=messages
-                )
-        st.write(model)
-        st.write(stream.choices[0].message.content)
+        if use_other_provider:
+            if model == "gemini-2.0-flash-exp":
+                # Configure Gemini
+                gemini_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+                
+                # Extract content for Gemini
+                prompt = messages[0]["content"]
+                response = gemini_model.generate_content(prompt)
+                
+                def list_available_models():
+                    models = []
+                    for m in genai.list_models():
+                        if 'generateContent' in m.supported_generation_methods:
+                            models.append(m.name)
+                    return models
+            
+                # Call this function to see available models
+                available_models = list_available_models()
+                st.write("Available Gemini models:", available_models)
+                st.write("Selected model:", model)
+                st.write("Response:", response.text)
+                
+            elif model in ["command", "command-light", "command-nightly"]:
+                # Configure Cohere
+                prompt = messages[0]["content"]
+                
+                try:
+                    response = cohere_client.generate(
+                        model=model,
+                        prompt=prompt,
+                        max_tokens=1000,
+                        temperature=0.7
+                    )
+                    
+                    st.write("Selected model:", model)
+                    st.write("Response:", response.generations[0].text)
+                    
+                except Exception as e:
+                    st.error(f"Error calling Cohere API: {str(e)}")
+        else:
+            # OpenAI models
+            if openai_api_key:
+                stream = openai_client.chat.completions.create(
+                            model=model,
+                            messages=messages
+                        )
+                st.write("Selected model:", model)
+                st.write("Response:", stream.choices[0].message.content)
+            else:
+                st.error("OpenAI API key not found. Please add it to your secrets.")
+        # if use_other_provider and model == "gemini-2.0-flash-exp":
+        #     # Configure Gemini
+        #     genai.configure(api_key=Gemini_api_key)
+        #     # gemini_model = genai.GenerativeModel('gemini-2.5-flash-002')
+        #     gemini_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+
+            
+        #     # Extract content for Gemini
+        #     prompt = messages[0]["content"]
+        #     response = gemini_model.generate_content(prompt)
+        #     def list_available_models():
+        #         models = []
+        #         for m in genai.list_models():
+        #             if 'generateContent' in m.supported_generation_methods:
+        #                 models.append(m.name)
+        #         return models
+        
+        #     # Call this function to see available models
+        #     available_models = list_available_models()
+        #     # for model in available_models:
+        #     #     print(model)
+        #     st.write(available_models)
+        #     st.write(model)
+        #     st.write(response.text)
+            
+                        
+
+        # else:
+        #     stream = client.chat.completions.create(
+        #                 model=model,
+        #                 messages=messages
+        #             )
+        #     st.write(model)
+        #     st.write(stream.choices[0].message.content)
+

@@ -11,7 +11,7 @@ st.write(
 # Ask user for their OpenAI API key via `st.text_input`.
 # Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
 # via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = openai_api_key = st.secrets["API_KEY"]
+openai_api_key = st.secrets["API_KEY"]
 
 def read_pdf(file):
     pdf_reader = PyPDF2.PdfReader(file)
