@@ -3,3 +3,4 @@ openai
 PyPDF2
 bs4
 google-generativeai
+cohere
