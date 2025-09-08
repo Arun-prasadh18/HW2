@@ -52,25 +52,35 @@ with st.sidebar:
 
     use_advanced_model = st.checkbox("Use Advanced Model", value=False)
     use_other_provider = st.checkbox("Use Other Provider", value=False)
-
-    if use_advanced_model:
-        model = st.radio(
-            "Choose advanced model option",
-            ("gpt-4o",)  # Add more models if available
-        )
-    else:
-        model = st.radio(
-            "Choose a model",
-            ("gpt-5-mini", "gpt-5-nano")
-        )
-    # if use_other_provider:
-    #     model=st.radio("Choose Gemini/Cohere API",("gemini-2.0-flash-exp"))
     if use_other_provider:
         provider_choice = st.radio("Choose Provider", ("Gemini", "Cohere"))
         if provider_choice == "Gemini":
-            model = st.radio("Choose Gemini Model", ("gemini-2.0-flash-exp",))
+            model = st.radio("Choose Gemini Model", ("gemini-2.0-flash-exp","gemini-2.5-pro"))
         else:
-            model = st.radio("Choose Cohere Model", ("command", "command-light", "command-nightly"))
+            model = st.radio("Choose Cohere Model", ("command-r7b-12-2024","command-a-reasoning-08-2025", "command-nightly"))
+    elif use_advanced_model:
+        model = st.radio("Choose advanced model option", ("gpt-4o",))
+    else:
+        # Only show basic models when neither advanced nor other provider is selected
+        model = st.radio("Choose a model", ("gpt-5-mini", "gpt-5-nano"))
+    # if use_advanced_model:
+    #     model = st.radio(
+    #         "Choose advanced model option",
+    #         ("gpt-4o",)  # Add more models if available
+    #     )
+    # else:
+    #     model = st.radio(
+    #         "Choose a model",
+    #         ("gpt-5-mini", "gpt-5-nano")
+    #     )
+    # # if use_other_provider:
+    # #     model=st.radio("Choose Gemini/Cohere API",("gemini-2.0-flash-exp"))
+    # if use_other_provider:
+    #     provider_choice = st.radio("Choose Provider", ("Gemini", "Cohere"))
+    #     if provider_choice == "Gemini":
+    #         model = st.radio("Choose Gemini Model", ("gemini-2.0-flash-exp",))
+    #     else:
+    #         model = st.radio("Choose Cohere Model", ("command", "command-light", "command-nightly"))
 cohere_api_key = st.secrets["Cohere_API_Key"]
 
 openai_api_key  = st.secrets["API_KEY"]
@@ -92,7 +102,8 @@ else:
     if Gemini_api_key:
         genai.configure(api_key=Gemini_api_key)
     if cohere_api_key:
-        cohere_client = cohere.Client(api_key=cohere_api_key)
+        # cohere_client = cohere.Client(api_key=cohere_api_key)
+        cohere_client = cohere.ClientV2(api_key=cohere_api_key)  # Use ClientV2
 
     # Let the user upload a file via `st.file_uploader`.
     # uploaded_file = st.file_uploader(
@@ -122,44 +133,85 @@ else:
             }
         ]
         if use_other_provider:
-            if model == "gemini-2.0-flash-exp":
+            if model in ["gemini-2.0-flash-exp","gemini-2.5-pro"]:
                 # Configure Gemini
-                gemini_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+                gemini_model = genai.GenerativeModel(model)
                 
                 # Extract content for Gemini
                 prompt = messages[0]["content"]
                 response = gemini_model.generate_content(prompt)
-                
-                def list_available_models():
-                    models = []
-                    for m in genai.list_models():
-                        if 'generateContent' in m.supported_generation_methods:
-                            models.append(m.name)
-                    return models
+                # "models/gemini-2.5-pro"
+                # def list_available_models():
+                #     models = []
+                #     for m in genai.list_models():
+                #         if 'generateContent' in m.supported_generation_methods:
+                #             models.append(m.name)
+                #     return models
             
-                # Call this function to see available models
-                available_models = list_available_models()
-                st.write("Available Gemini models:", available_models)
+                # # Call this function to see available models
+                # available_models = list_available_models()
+                # st.write("Available Gemini models:", available_models)
                 st.write("Selected model:", model)
                 st.write("Response:", response.text)
-                
-            elif model in ["command", "command-light", "command-nightly"]:
-                # Configure Cohere
-                prompt = messages[0]["content"]
-                
+            
+            elif model in ["command-r7b-12-2024", "command-a-reasoning-08-2025", "command-nightly"]:
+                # Configure Cohere using Chat API v2
                 try:
-                    response = cohere_client.generate(
+                    response = cohere_client.chat(
                         model=model,
-                        prompt=prompt,
-                        max_tokens=1000,
-                        temperature=0.7
+                        messages=[{"role": "user", "content": messages[0]["content"]}],
+                        temperature=0.7,
+                        max_tokens=1000
                     )
                     
                     st.write("Selected model:", model)
-                    st.write("Response:", response.generations[0].text)
+                    
+                    # Handle the nested content structure
+                    if hasattr(response.message, 'content') and response.message.content:
+                        # Find the text content (skip thinking content)
+                        for content_item in response.message.content:
+                            if hasattr(content_item, 'type') and content_item.type == 'text':
+                                st.write("Response:", content_item.text)
+                                break
+                    else:
+                        st.error("No text content found in response")
                     
                 except Exception as e:
                     st.error(f"Error calling Cohere API: {str(e)}")
+
+            # elif model in ["command-r7b-12-2024","command-a-reasoning-08-2025","command", "command-light", "command-nightly"]:
+            #     # Configure Cohere
+            #     prompt = messages[0]["content"]
+                
+            #     def list_available_cohere_models():
+            #         models = []
+            #         try:
+            #             model_list = cohere_client.models.list()
+            #             # for model in model_list:
+            #             #     models.append(model.name)
+            #             return model_list
+            #         except Exception as e:
+            #             st.error(f"Error fetching Cohere models: {e}")
+            #             return []
+            #         # Display available models
+            #     available_cohere_models = list_available_cohere_models()
+            #     st.write("Available Cohere models:", available_cohere_models)
+
+                
+            #     try:
+            #         response = cohere_client.chat(
+            #         model=model,
+            #         messages=[{"role": "user", "content": messages[0]["content"]}],  # Use messages array
+            #         temperature=0.7,
+            #         max_tokens=1000)
+        
+            #         st.write("Selected model:", model)
+            #         # st.write("Response:", response.message.content[0].text)
+            #         st.write("Response:", response.message[0])
+
+                    
+            #     except Exception as e:
+            #         st.error(f"Error calling Cohere API: {str(e)}")
         else:
             # OpenAI models
             if openai_api_key:
