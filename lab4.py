@@ -14,7 +14,7 @@ import chromadb
 # Create an OpenAI client if it doesn't exist in the session state.
 if 'openai_client' not in st.session_state:
     try:
-        api_key = st.secrets["OPENAI_API_KEY"]
+        api_key = st.secrets["API_KEY"]
         st.session_state.openai_client = OpenAI(api_key=api_key)
     except Exception as e:
         st.error(f"Failed to initialize OpenAI client: {e}")
