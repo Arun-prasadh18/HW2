@@ -370,6 +370,9 @@
 
 #     # Add assistant response to chat history
 #     st.session_state.messages.append({"role": "assistant", "content": full_response})
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import streamlit as st
 import os
@@ -382,9 +385,6 @@ import chromadb
 
 # Fix for ChromaDB compatibility with Streamlit's environment
 # This is a common workaround needed in modern Streamlit apps using SQLite.
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -480,7 +480,7 @@ def setup_vector_db():
     chroma_client = chromadb.PersistentClient(path=db_path)
     collection = chroma_client.get_or_create_collection("HTML_RAG_Collection")
 
-    html_directory = "/workspaces/HW2/HTML files"
+    html_directory = "HTML files sample"
     if not os.path.exists(html_directory):
         os.makedirs(html_directory)
         st.warning(f"Created directory '{html_directory}'. Please add your HTML files there and refresh.")
@@ -547,6 +547,13 @@ def get_conversation_buffer(messages):
 if 'vectorDB_collection' not in st.session_state:
     st.session_state.vectorDB_collection = setup_vector_db()
 collection = st.session_state.vectorDB_collection
+
+# Display the number of items (chunks) in the collection
+try:
+    item_count = collection.count()
+    st.sidebar.metric("Chunks in DB", item_count)
+except Exception as e:
+    st.sidebar.error(f"Could not count items in DB: {e}")
 
 # Initialize chat history in session state
 if "messages" not in st.session_state:
