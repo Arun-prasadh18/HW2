@@ -6,4 +6,3 @@ google-generativeai
 cohere
 chromadb
 pysqlite3-binary
-protobuf==3.20
