@@ -165,7 +165,7 @@ Here is the relevant information from the course documents:
 Use this information to answer the user's question. If the information doesn't fully answer the question, do not use general knowledge."""
     else:
         system_prompt = """You are a helpful assistant with short-term memory of the conversation.
-No relevant course documents were found for this query, but you should still help the user based on your general knowledge.
+No relevant course documents were found for this query, but do not use general knowledge.
 Maintain context from previous messages in the conversation."""
     
     # Build messages list including conversation history
