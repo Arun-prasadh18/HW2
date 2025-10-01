@@ -162,7 +162,7 @@ Here is the relevant information from the course documents:
 
 {relevant_info['context']}
 
-Use this information to answer the user's question. If the information doesn't fully answer the question, you can supplement with your general knowledge but clearly distinguish between what comes from the documents and what is general knowledge."""
+Use this information to answer the user's question. If the information doesn't fully answer the question, do not use general knowledge."""
     else:
         system_prompt = """You are a helpful assistant with short-term memory of the conversation.
 No relevant course documents were found for this query, but you should still help the user based on your general knowledge.
