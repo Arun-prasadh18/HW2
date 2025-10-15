@@ -6,3 +6,4 @@ google-generativeai
 cohere
 chromadb
 pysqlite3-binary
+anthropic
