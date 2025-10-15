@@ -131,7 +131,7 @@ def initialize_system(csv_file, persist_directory="./chromadb_data"):
     st.success(f"✅ Created new collection with {collection.count()} documents")
     return collection, df, client
 
-collection, df, client = initialize_system("/workspaces/HW2/HW 7 Source File/Example_news_info_for_testing.csv")
+collection, df, client = initialize_system("HW 7 Source File/Example_news_info_for_testing.csv")
 st.divider()
 
 # --- Dynamic Legal Materiality Scoring ---
