@@ -20,8 +20,12 @@ url_path=None, default=False)
 HW5=st.Page("HWs/HW5.py", title="HW5", icon=None,
 url_path=None, default=False)
 HW7=st.Page("HWs/HW7.py", title="HW7", icon=None,
+url_path=None, default=False)
+lab6=st.Page("lab6.py", title="lab6", icon=None,
+url_path=None, default=False)
+lab8=st.Page("Lab8.py", title="lab8", icon=None,
 url_path=None, default=True)
-pg=st.navigation([first_page,second_page,Third_page,Lab4,Lab5,LAB5b,HW5,HW7])
+pg=st.navigation([first_page,second_page,Third_page,Lab4,Lab5,LAB5b,HW5,HW7,lab6,lab8])
 # st.set_page_config(page_title="Data Manager",page_icon=":material/edit:")
 # with st.sidebar:
 #     add_radio=st.radio("choose a option",("Summarize the document in 100 words", 
